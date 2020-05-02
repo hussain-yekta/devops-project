@@ -1,0 +1,19 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'EKS cluster and network'
+Parameters:
+  # Note: 172.17.0.0/16 should never be used as VPC cidr because it collides with Docker's default internal cidr
+  VpcBlock:
+    Type: String
+    Default: 10.10.0.0/16
+    Description: The CIDR range for the VPC. This should be a valid private (RFC 1918) CIDR range.
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock:  !Ref VpcBlock
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+      - Key: Name
+        Value: !Sub '${AWS::StackName}-vpc'
