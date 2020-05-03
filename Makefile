@@ -36,3 +36,41 @@ eks:
 
 delete-eks:
 	aws cloudformation delete-stack --stack-name eks-dev
+
+workers:
+	aws cloudformation create-stack \
+		--capabilities CAPABILITY_IAM \
+		--stack-name eks-dev-workers \
+		--template-body file://cloudformation/amazon-eks-nodegroup.yaml \
+		--parameter ParameterKey=ClusterControlPlaneSecurityGroup,ParameterValue=sg-081d7a210689c259c \
+			ParameterKey=ClusterName,ParameterValue=eks-dev \
+			ParameterKey=KeyName,ParameterValue=eks-node-secrets-keypair \
+			ParameterKey=NodeAutoScalingGroupDesiredCapacity,ParameterValue=2 \
+			ParameterKey=NodeAutoScalingGroupMaxSize,ParameterValue=5 \
+			ParameterKey=NodeAutoScalingGroupMinSize,ParameterValue=1 \
+			ParameterKey=NodeGroupName,ParameterValue=eks-dev-workers \
+			ParameterKey=NodeImageId,ParameterValue=ami-0842e3f57a7f2db2e \
+			ParameterKey=NodeInstanceType,ParameterValue=t2.micro \
+			ParameterKey=NodeVolumeSize,ParameterValue=8 \
+			ParameterKey=Subnets,ParameterValue=subnet-0474af036f25654cc\\,subnet-00383d6a872fa1ed9\\,subnet-08536f57e2fe76f83 \
+			ParameterKey=VpcId,ParameterValue=vpc-06d6cf0bec368d195
+	aws cloudformation wait stack-create-complete  --stack-name cfn-secret-provider
+	kubectl apply -f aws-auth-cm.yaml
+
+delete-workers:
+	aws cloudformation delete-stack --stack-name eks-dev-workers
+
+db-vpc:
+	aws cloudformation create-stack \
+		--stack-name eks-dev-db-vpc \
+		--template-body file://cloudformation/db-vpc.yaml \
+		--parameter ParameterKey=VpcBlock,ParameterValue=10.30.0.0/16 \
+			ParameterKey=Subnet01Block,ParameterValue=10.30.64.0/18 \
+			ParameterKey=Subnet02Block,ParameterValue=10.30.128.0/18 \
+			ParameterKey=Subnet03Block,ParameterValue=10.30.192.0/18
+
+delete-db-vpc:
+	#read -p "Are you sure? It's a Database VPC. Confirm yes/no:"
+	# echo
+	#if [[ "$$REPLY" == "no" ]]; then exit 1 ; fi
+	aws cloudformation delete-stack --stack-name eks-dev-db-vpc
