@@ -74,3 +74,18 @@ delete-db-vpc:
 	# echo
 	#if [[ "$$REPLY" == "no" ]]; then exit 1 ; fi
 	aws cloudformation delete-stack --stack-name eks-dev-db-vpc
+
+db:
+	aws cloudformation create-stack \
+		--stack-name db-dev \
+		--template-body file://cloudformation/db.yaml \
+		--parameter ParameterKey=ParentVPCStack,ParameterValue=eks-dev-db-vpc \
+			ParameterKey=ParentSecurityGroupIds,ParameterValue=sg-037348d170308350a \
+			ParameterKey=DBInstanceID,ParameterValue=db-dev \
+			ParameterKey=DBName,ParameterValue=mydatabase \
+			ParameterKey=DBUsername,ParameterValue=root \
+			ParameterKey=Application,ParameterValue=ECommerceApp \
+			ParameterKey=ServiceOwnersEmailContact,ParameterValue=shaibekovmb@gmail.com \
+			ParameterKey=Confidentiality,ParameterValue=private
+
+run-all: secret-generator sshkeys eks workers db-vpc db
