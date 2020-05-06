@@ -1,0 +1,26 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Create a VPC Peering connection using the PeerRole to accept.
+
+Parameters:
+  RequestingVpcId:
+    Description: The id of the requestion VPC
+    Type: AWS::EC2::VPC::Id
+  AcceptingVpcId:
+    Description: The id of the accepting VPC
+    Type: AWS::EC2::VPC::Id
+
+Resources:
+  vpcPeeringConnection:
+    Type: 'AWS::EC2::VPCPeeringConnection'
+    Properties:
+      VpcId: !Ref RequestingVpcId
+      PeerVpcId: !Ref AcceptingVpcId
+      Tags:
+        -
+          Key: "Name"
+          Value: !Sub "${AWS::StackName}"
+Outputs:
+  VPCPeeringConnectionId:
+    Value: !Ref vpcPeeringConnection
+    Export:
+      Name: !Sub "${AWS::StackName}"

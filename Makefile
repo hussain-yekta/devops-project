@@ -55,7 +55,25 @@ workers:
 			ParameterKey=Subnets,ParameterValue=subnet-0474af036f25654cc\\,subnet-00383d6a872fa1ed9\\,subnet-08536f57e2fe76f83 \
 			ParameterKey=VpcId,ParameterValue=vpc-06d6cf0bec368d195
 	aws cloudformation wait stack-create-complete  --stack-name cfn-secret-provider
-	kubectl apply -f aws-auth-cm.yaml
+	kubectl apply -f kubernetes/aws-auth-cm.yaml
+
+update-workers:
+	aws cloudformation update-stack \
+		--capabilities CAPABILITY_IAM \
+		--stack-name eks-dev-workers \
+		--template-body file://cloudformation/amazon-eks-nodegroup.yaml \
+		--parameter ParameterKey=ClusterControlPlaneSecurityGroup,ParameterValue=sg-081d7a210689c259c \
+			ParameterKey=ClusterName,ParameterValue=eks-dev \
+			ParameterKey=KeyName,ParameterValue=eks-node-secrets-keypair \
+			ParameterKey=NodeAutoScalingGroupDesiredCapacity,ParameterValue=4 \
+			ParameterKey=NodeAutoScalingGroupMaxSize,ParameterValue=5 \
+			ParameterKey=NodeAutoScalingGroupMinSize,ParameterValue=1 \
+			ParameterKey=NodeGroupName,ParameterValue=eks-dev-workers \
+			ParameterKey=NodeImageId,ParameterValue=ami-0842e3f57a7f2db2e \
+			ParameterKey=NodeInstanceType,ParameterValue=t2.micro \
+			ParameterKey=NodeVolumeSize,ParameterValue=8 \
+			ParameterKey=Subnets,ParameterValue=subnet-0474af036f25654cc\\,subnet-00383d6a872fa1ed9\\,subnet-08536f57e2fe76f83 \
+			ParameterKey=VpcId,ParameterValue=vpc-06d6cf0bec368d195
 
 delete-workers:
 	aws cloudformation delete-stack --stack-name eks-dev-workers
@@ -87,5 +105,38 @@ db:
 			ParameterKey=Application,ParameterValue=ECommerceApp \
 			ParameterKey=ServiceOwnersEmailContact,ParameterValue=shaibekovmb@gmail.com \
 			ParameterKey=Confidentiality,ParameterValue=private
+
+peering:
+	bin/aws-vpc-create-peering-connection.sh vpc-06d6cf0bec368d195 vpc-0662c961b3030e897 cloudformation/eks-dev-db.yaml
+
+delete-peering:
+	aws cloudformation delete-stack --stack-name eks-dev-db-peering
+
+ssh-bastion:
+	aws cloudformation create-stack \
+		--stack-name eks-dev-bastion \
+		--template-body file://cloudformation/bastion.yaml \
+		--parameter ParameterKey=KeyName,ParameterValue=eks-node-secrets-keypair \
+			ParameterKey=Ami,ParameterValue=ami-0323c3dd2da7fb37d \
+			ParameterKey=VpcID,ParameterValue=vpc-06d6cf0bec368d195 \
+			ParameterKey=SubnetID,ParameterValue=subnet-0474af036f25654cc
+
+delete-ssh-bastion:
+	aws cloudformation delete-stack --stack-name eks-dev-bastion
+
+jenkins:
+	kubectl apply -f jenkins-master/kubernetes.yaml
+
+stop-jenkins:
+	kubectl delete -f jenkins-master/kubernetes.yaml
+
+delete-jenkins: stop-jenkins
+	kubectl delete pvc jenkins-home-jenkins-0
+
+nginx:
+	kubectl apply -f kubernetes/ingress-nginx.yaml
+
+delete-nginx:
+	kubectl delete -f kubernetes/ingress-nginx.yaml
 
 run-all: secret-generator sshkeys eks workers db-vpc db
