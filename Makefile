@@ -142,4 +142,5 @@ delete-nginx:
 run-all: secret-generator sshkeys eks workers db-vpc db
 
 privilege-jenkins:
-        kubectl apply -f clusterrole-binding.yaml
+	kubectl apply -f clusterrole-binding.yaml
+	kubectl apply -f psp.yaml
