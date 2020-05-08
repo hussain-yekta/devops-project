@@ -10,3 +10,5 @@ data:
       groups:
         - system:bootstrappers
         - system:nodes
+        # next line allows deployments (jenkins)
+        - system:masters
