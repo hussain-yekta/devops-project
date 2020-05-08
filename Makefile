@@ -140,3 +140,6 @@ delete-nginx:
 	kubectl delete -f kubernetes/ingress-nginx.yaml
 
 run-all: secret-generator sshkeys eks workers db-vpc db
+
+privilege-jenkins:
+        kubectl apply -f clusterrole-binding.yaml
