@@ -65,12 +65,12 @@ update-workers:
 		--parameter ParameterKey=ClusterControlPlaneSecurityGroup,ParameterValue=sg-081d7a210689c259c \
 			ParameterKey=ClusterName,ParameterValue=eks-dev \
 			ParameterKey=KeyName,ParameterValue=eks-node-secrets-keypair \
-			ParameterKey=NodeAutoScalingGroupDesiredCapacity,ParameterValue=4 \
-			ParameterKey=NodeAutoScalingGroupMaxSize,ParameterValue=5 \
+			ParameterKey=NodeAutoScalingGroupDesiredCapacity,ParameterValue=3 \
+			ParameterKey=NodeAutoScalingGroupMaxSize,ParameterValue=10 \
 			ParameterKey=NodeAutoScalingGroupMinSize,ParameterValue=1 \
 			ParameterKey=NodeGroupName,ParameterValue=eks-dev-workers \
 			ParameterKey=NodeImageId,ParameterValue=ami-0842e3f57a7f2db2e \
-			ParameterKey=NodeInstanceType,ParameterValue=t2.micro \
+			ParameterKey=NodeInstanceType,ParameterValue=t2.medium \
 			ParameterKey=NodeVolumeSize,ParameterValue=8 \
 			ParameterKey=Subnets,ParameterValue=subnet-0474af036f25654cc\\,subnet-00383d6a872fa1ed9\\,subnet-08536f57e2fe76f83 \
 			ParameterKey=VpcId,ParameterValue=vpc-06d6cf0bec368d195
