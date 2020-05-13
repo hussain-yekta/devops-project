@@ -1,0 +1,24 @@
+---
+# Source: opencart/templates/svc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-opencart
+  labels:
+    app: release-name-opencart
+    chart: opencart-7.0.15
+    release: "release-name"
+    heritage: "Tiller"
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: "Cluster"
+  loadBalancerIP: ""
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+    - name: https
+      port: 443
+      targetPort: https
+  selector:
+    app: release-name-opencart

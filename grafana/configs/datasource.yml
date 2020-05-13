@@ -1,0 +1,26 @@
+apiVersion: 1
+
+datasources:
+  - name: 'Prometheus'
+    type: 'prometheus'
+    access: 'proxy'
+    org_id: 1
+    url: 'http://prometheus-server:80'
+    is_default: true
+    version: 1
+    editable: true
+  - name: 'Loki'
+    type: 'loki'
+    access: 'proxy'
+    org_id: 1
+    url: 'http://loki:3100'
+    is_default: false
+    version: 1
+    editable: true
+    jsonData:
+      maxLines: 1000
+  - name: Cloudwatch
+    type: cloudwatch
+    jsonData:
+      authType: credentials
+      defaultRegion: us-east-1

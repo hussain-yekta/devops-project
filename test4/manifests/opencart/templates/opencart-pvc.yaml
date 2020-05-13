@@ -1,0 +1,18 @@
+---
+# Source: opencart/templates/opencart-pvc.yaml
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: release-name-opencart-opencart
+  labels:
+    app: release-name-opencart
+    chart: opencart-7.0.15
+    release: "release-name"
+    heritage: "Tiller"
+spec:
+  accessModes:
+    - "ReadWriteOnce"
+  resources:
+    requests:
+      storage: "8Gi"
+  
