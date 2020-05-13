@@ -1,0 +1,19 @@
+---
+# Source: grafana/templates/tests/test-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: release-name-grafana-test
+  labels:
+    app: release-name-grafana
+    chart: "grafana-3.7.3"
+    heritage: "Tiller"
+    release: "release-name"
+data:
+  run.sh: |-
+    @test "Test Health" {
+      url="http://release-name-grafana/api/health"
+
+      code=$(curl -s -o /dev/null -I -w "%{http_code}" $url)
+      [ "$code" == "200" ]
+    }
