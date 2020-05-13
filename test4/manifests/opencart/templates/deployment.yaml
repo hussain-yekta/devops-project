@@ -1,0 +1,108 @@
+---
+# Source: opencart/templates/deployment.yaml
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: release-name-opencart
+  labels:
+    app: release-name-opencart
+    chart: opencart-7.0.15
+    release: "release-name"
+    heritage: "Tiller"
+spec:
+  selector:
+    matchLabels:
+      app: release-name-opencart
+      release: "release-name"
+  template:
+    metadata:
+      labels:
+        app: release-name-opencart
+        chart: opencart-7.0.15
+        release: "release-name"
+    spec:      
+      hostAliases:
+      - ip: "127.0.0.1"
+        hostnames:
+        - "status.localhost"
+      containers:
+      - name: release-name-opencart
+        image: docker.io/bitnami/opencart:3.0.3-3-debian-10-r0
+        imagePullPolicy: "IfNotPresent"
+        env:
+        - name: ALLOW_EMPTY_PASSWORD
+          value: "yes"
+        - name: MARIADB_HOST
+          value: release-name-mariadb
+        - name: MARIADB_PORT_NUMBER
+          value: "3306"
+        - name: OPENCART_DATABASE_NAME
+          value: "bitnami_opencart"
+        - name: OPENCART_DATABASE_USER
+          value: "bn_opencart"
+        - name: OPENCART_DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: release-name-mariadb
+              key: mariadb-password
+        - name: OPENCART_HOST
+          value: "shop.312.school"
+        - name: OPENCART_USERNAME
+          value: "user"
+        - name: OPENCART_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: release-name-opencart
+              key: opencart-password
+        - name: OPENCART_EMAIL
+          value: "user@example.com"
+        - name: SMTP_HOST
+          value: ""
+        - name: SMTP_PORT
+          value: ""
+        - name: SMTP_USER
+          value: ""
+        - name: SMTP_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: release-name-opencart
+              key: smtp-password
+        - name: SMTP_PROTOCOL
+          value: ""
+        ports:
+        - name: http
+          containerPort: 80
+        - name: https
+          containerPort: 443
+        livenessProbe:
+          httpGet:
+            path: /admin/
+            port: http
+            httpHeaders:
+            - name: Host
+              value: "shop.312.school"
+          initialDelaySeconds: 120
+          timeoutSeconds: 5
+          failureThreshold: 6
+        readinessProbe:
+          httpGet:
+            path: /admin/
+            port: http
+            httpHeaders:
+            - name: Host
+              value: "shop.312.school"
+          initialDelaySeconds: 30
+          timeoutSeconds: 3
+          periodSeconds: 5
+        resources:
+          requests:
+            cpu: 300m
+            memory: 512Mi
+          
+        volumeMounts:
+        - name: opencart-data
+          mountPath: /bitnami/opencart
+      volumes:
+      - name: opencart-data
+        persistentVolumeClaim:
+          claimName: release-name-opencart-opencart
