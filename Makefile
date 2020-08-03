@@ -1,5 +1,8 @@
-
-
+KubeDnsVersion = 1.6.6
+KubeProxyVersion = 1.17.7
+ClusterAutoScalerVersion = 1.17.3
+CniMajorVersion = 1.6
+CniVersion = 1.6
 
 secret-generator:
 	aws cloudformation create-stack \
@@ -34,11 +37,35 @@ eks:
 			ParameterKey=Subnet02Az,ParameterValue=1 \
 			ParameterKey=Subnet03Az,ParameterValue=2
 
+update-cluster-version:
+	aws eks update-cluster-version --name eks-dev --kubernetes-version 1.17
+
+update-daemonset:
+	kubectl set image daemonset.apps/kube-proxy \
+		-n kube-system \
+		kube-proxy=602401143452.dkr.ecr.us-west-2.amazonaws.com/eks/kube-proxy:v$(KubeProxyVersion)
+
+update-dns:
+	kubectl set image --namespace kube-system deployment.apps/coredns \
+		coredns=602401143452.dkr.ecr.us-west-2.amazonaws.com/eks/coredns:v$(KubeDnsVersion)
+
+update-cni:
+	kubectl apply -f https://raw.githubusercontent.com/aws/amazon-vpc-cni-k8s/release-$(CniVersion)/config/v$(CniMajorVersion)/aws-k8s-cni.yaml
+
+update-cluster-autoscaler:
+	kubectl -n kube-system set image deployment.apps/cluster-autoscaler cluster-autoscaler=us.gcr.io/k8s-artifacts-prod/autoscaling/cluster-autoscaler:v$(ClusterAutoScalerVersion)
+
+disable-autoscaler:
+	kubectl scale deployments/cluster-autoscaler --replicas=0 -n kube-system
+
+enable-autoscaler:
+	kubectl scale deployments/cluster-autoscaler --replicas=1 -n kube-system
+
 delete-eks:
 	aws cloudformation delete-stack --stack-name eks-dev
 
 workers:
-	aws cloudformation create-stack \
+	aws cloudformation update-stack \
 		--capabilities CAPABILITY_IAM \
 		--stack-name eks-dev-workers \
 		--template-body file://cloudformation/amazon-eks-nodegroup.yaml \
