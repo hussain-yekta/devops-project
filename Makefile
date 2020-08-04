@@ -65,7 +65,7 @@ delete-eks:
 	aws cloudformation delete-stack --stack-name eks-dev
 
 workers:
-	aws cloudformation update-stack \
+	aws cloudformation create-stack \
 		--capabilities CAPABILITY_IAM \
 		--stack-name eks-dev-workers \
 		--template-body file://cloudformation/amazon-eks-nodegroup.yaml \
