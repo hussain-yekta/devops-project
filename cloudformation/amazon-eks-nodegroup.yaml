@@ -23,6 +23,7 @@ Metadata:
           - NodeVolumeSize
           - KeyName
           - BootstrapArguments
+          - SpotPrice
       - Label:
           default: Worker Network Configuration
         Parameters:
@@ -349,6 +350,10 @@ Parameters:
     Default: 20
     Description: Node volume size
 
+  SpotPrice:
+    Type: Number
+    Description: Maximum spot price in USD
+
   Subnets:
     Type: "List<AWS::EC2::Subnet::Id>"
     Description: The subnets where workers can be created.
@@ -494,7 +499,7 @@ Resources:
       KeyName: !Ref KeyName
       SecurityGroups:
         - Ref: NodeSecurityGroup
-      # SpotPrice: "0.02"
+      SpotPrice: !Ref SpotPrice
       UserData: !Base64
         "Fn::Sub": |
           #!/bin/bash

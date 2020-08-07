@@ -67,7 +67,7 @@ delete-eks:
 workers:
 	aws cloudformation create-stack \
 		--capabilities CAPABILITY_IAM \
-		--stack-name eks-dev-workers \
+		--stack-name eks-dev-workers-spot-instance \
 		--template-body file://cloudformation/amazon-eks-nodegroup.yaml \
 		--parameter ParameterKey=ClusterControlPlaneSecurityGroup,ParameterValue=sg-081d7a210689c259c \
 			ParameterKey=ClusterName,ParameterValue=eks-dev \
@@ -79,6 +79,7 @@ workers:
 			ParameterKey=NodeImageId,ParameterValue=ami-0842e3f57a7f2db2e \
 			ParameterKey=NodeInstanceType,ParameterValue=t2.micro \
 			ParameterKey=NodeVolumeSize,ParameterValue=8 \
+			ParameterKey=SpotPrice,ParameterValue=0.0116 \
 			ParameterKey=Subnets,ParameterValue=subnet-0474af036f25654cc\\,subnet-00383d6a872fa1ed9\\,subnet-08536f57e2fe76f83 \
 			ParameterKey=VpcId,ParameterValue=vpc-06d6cf0bec368d195
 	aws cloudformation wait stack-create-complete  --stack-name cfn-secret-provider
@@ -87,7 +88,7 @@ workers:
 update-workers:
 	aws cloudformation update-stack \
 		--capabilities CAPABILITY_IAM \
-		--stack-name eks-dev-workers \
+		--stack-name eks-dev-workers-spot-instance \
 		--template-body file://cloudformation/amazon-eks-nodegroup.yaml \
 		--parameter ParameterKey=ClusterControlPlaneSecurityGroup,ParameterValue=sg-081d7a210689c259c \
 			ParameterKey=ClusterName,ParameterValue=eks-dev \
@@ -98,6 +99,7 @@ update-workers:
 			ParameterKey=NodeGroupName,ParameterValue=eks-dev-workers \
 			ParameterKey=NodeImageId,ParameterValue=ami-0842e3f57a7f2db2e \
 			ParameterKey=NodeInstanceType,ParameterValue=t2.medium \
+			ParameterKey=SpotPrice,ParameterValue=0.0464 \
 			ParameterKey=NodeVolumeSize,ParameterValue=8 \
 			ParameterKey=Subnets,ParameterValue=subnet-0474af036f25654cc\\,subnet-00383d6a872fa1ed9\\,subnet-08536f57e2fe76f83 \
 			ParameterKey=VpcId,ParameterValue=vpc-06d6cf0bec368d195
