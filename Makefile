@@ -1,3 +1,8 @@
+service = eks-dev
+region = us-east-1
+aws := aws --region $(region)
+nodestack := $(service)-nodes
+
 KubeDnsVersion = 1.6.6
 KubeProxyVersion = 1.17.7
 ClusterAutoScalerVersion = 1.17.3
@@ -65,11 +70,24 @@ delete-eks:
 	aws cloudformation delete-stack --stack-name eks-dev
 
 workers:
+	@$(eval securitygroups := $(shell $(aws) cloudformation describe-stacks \
+		--stack-name $(service) \
+		--query 'Stacks[0].Outputs[?OutputKey==`SecurityGroups`].OutputValue' \
+		--output text | sed 's/,/\\\\,/g'))
+	@$(eval subnetids := $(shell $(aws) cloudformation describe-stacks \
+		--stack-name $(service) \
+		--query 'Stacks[0].Outputs[?OutputKey==`SubnetIds`].OutputValue' \
+		--output text | sed 's/,/\\\\,/g'))
+	@$(eval vpcid := $(shell $(aws) cloudformation describe-stacks \
+		--stack-name $(service) \
+		--query 'Stacks[0].Outputs[?OutputKey==`VpcId`].OutputValue' \
+		--output text))
+	@$(eval nodeInstanceProfile :=  $(shell echo "$$(echo $(nodestack) | cut -f 1,2 -d '-')-$$(echo $(nodestack) | rev | cut -f 1 -d '-' | rev)-NodeInstanceProfile"))
 	aws cloudformation create-stack \
 		--capabilities CAPABILITY_IAM \
-		--stack-name eks-dev-workers-spot-instance \
+		--stack-name eks-dev-workers \
 		--template-body file://cloudformation/amazon-eks-nodegroup.yaml \
-		--parameter ParameterKey=ClusterControlPlaneSecurityGroup,ParameterValue=sg-081d7a210689c259c \
+		--parameter ParameterKey=ClusterControlPlaneSecurityGroup,ParameterValue=$(securitygroups) \
 			ParameterKey=ClusterName,ParameterValue=eks-dev \
 			ParameterKey=KeyName,ParameterValue=eks-node-secrets-keypair \
 			ParameterKey=NodeAutoScalingGroupDesiredCapacity,ParameterValue=2 \
@@ -80,15 +98,15 @@ workers:
 			ParameterKey=NodeInstanceType,ParameterValue=t2.micro \
 			ParameterKey=NodeVolumeSize,ParameterValue=8 \
 			ParameterKey=SpotPrice,ParameterValue=0.0116 \
-			ParameterKey=Subnets,ParameterValue=subnet-0474af036f25654cc\\,subnet-00383d6a872fa1ed9\\,subnet-08536f57e2fe76f83 \
-			ParameterKey=VpcId,ParameterValue=vpc-06d6cf0bec368d195
+			ParameterKey=Subnets,ParameterValue=$(subnetids) \
+			ParameterKey=VpcId,ParameterValue=$(vpcid)
 	aws cloudformation wait stack-create-complete  --stack-name cfn-secret-provider
 	kubectl apply -f kubernetes/aws-auth-cm.yaml
 
 update-workers:
 	aws cloudformation update-stack \
 		--capabilities CAPABILITY_IAM \
-		--stack-name eks-dev-workers-spot-instance \
+		--stack-name eks-dev-workers \
 		--template-body file://cloudformation/amazon-eks-nodegroup.yaml \
 		--parameter ParameterKey=ClusterControlPlaneSecurityGroup,ParameterValue=sg-081d7a210689c259c \
 			ParameterKey=ClusterName,ParameterValue=eks-dev \
