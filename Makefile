@@ -9,6 +9,14 @@ ClusterAutoScalerVersion = 1.17.3
 CniMajorVersion = 1.6
 CniVersion = 1.6
 
+eksVersion = 1.17
+eksName = eks-dev
+nodeInstanceType = t2.medium
+spotPrice = 0.0464
+ami = ami-0d9d22013d1f539ae
+nodeGroupName = eks-dev-workers
+workersStackName = eks-dev-workers
+
 secret-generator:
 	aws cloudformation create-stack \
 		--capabilities CAPABILITY_IAM \
@@ -30,11 +38,11 @@ get-private-key:
 	chmod 600 ~/.ssh/eks-node-secrets.pem
 
 eks:
-	aws cloudformation create-stack --stack-name eks-dev \
+	aws cloudformation create-stack --stack-name $(eksName) \
 		--template-body file://cloudformation/eks.yaml \
 		--capabilities CAPABILITY_IAM \
 		--parameter ParameterKey=VpcBlock,ParameterValue=10.20.0.0/16 \
-			ParameterKey=ClusterVersion,ParameterValue=1.15 \
+			ParameterKey=ClusterVersion,ParameterValue=$(eksVersion) \
 			ParameterKey=Subnet01Block,ParameterValue=10.20.64.0/18 \
 			ParameterKey=Subnet02Block,ParameterValue=10.20.128.0/18 \
 			ParameterKey=Subnet03Block,ParameterValue=10.20.192.0/18 \
@@ -43,7 +51,7 @@ eks:
 			ParameterKey=Subnet03Az,ParameterValue=2
 
 update-cluster-version:
-	aws eks update-cluster-version --name eks-dev --kubernetes-version 1.17
+	aws eks update-cluster-version --name $(eksName) --kubernetes-version $(eksVersion)
 
 update-daemonset:
 	kubectl set image daemonset.apps/kube-proxy \
@@ -67,7 +75,7 @@ enable-autoscaler:
 	kubectl scale deployments/cluster-autoscaler --replicas=1 -n kube-system
 
 delete-eks:
-	aws cloudformation delete-stack --stack-name eks-dev
+	aws cloudformation delete-stack --stack-name $(eksName)
 
 workers:
 	@$(eval securitygroups := $(shell $(aws) cloudformation describe-stacks \
@@ -85,45 +93,58 @@ workers:
 	@$(eval nodeInstanceProfile :=  $(shell echo "$$(echo $(nodestack) | cut -f 1,2 -d '-')-$$(echo $(nodestack) | rev | cut -f 1 -d '-' | rev)-NodeInstanceProfile"))
 	aws cloudformation create-stack \
 		--capabilities CAPABILITY_IAM \
-		--stack-name eks-dev-workers \
+		--stack-name $(workersStackName) \
 		--template-body file://cloudformation/amazon-eks-nodegroup.yaml \
 		--parameter ParameterKey=ClusterControlPlaneSecurityGroup,ParameterValue=$(securitygroups) \
-			ParameterKey=ClusterName,ParameterValue=eks-dev \
+			ParameterKey=ClusterName,ParameterValue=$(eksName) \
 			ParameterKey=KeyName,ParameterValue=eks-node-secrets-keypair \
 			ParameterKey=NodeAutoScalingGroupDesiredCapacity,ParameterValue=2 \
 			ParameterKey=NodeAutoScalingGroupMaxSize,ParameterValue=5 \
 			ParameterKey=NodeAutoScalingGroupMinSize,ParameterValue=1 \
-			ParameterKey=NodeGroupName,ParameterValue=eks-dev-workers \
-			ParameterKey=NodeImageId,ParameterValue=ami-0842e3f57a7f2db2e \
-			ParameterKey=NodeInstanceType,ParameterValue=t2.micro \
+			ParameterKey=NodeGroupName,ParameterValue=$(nodeGroupName) \
+			ParameterKey=NodeImageId,ParameterValue=$(ami) \
+			ParameterKey=NodeInstanceType,ParameterValue=$(nodeInstanceType) \
 			ParameterKey=NodeVolumeSize,ParameterValue=8 \
-			ParameterKey=SpotPrice,ParameterValue=0.0116 \
+			ParameterKey=SpotPrice,ParameterValue=$(spotPrice) \
 			ParameterKey=Subnets,ParameterValue=$(subnetids) \
 			ParameterKey=VpcId,ParameterValue=$(vpcid)
 	aws cloudformation wait stack-create-complete  --stack-name cfn-secret-provider
 	kubectl apply -f kubernetes/aws-auth-cm.yaml
 
 update-workers:
+	@$(eval securitygroups := $(shell $(aws) cloudformation describe-stacks \
+		--stack-name $(service) \
+		--query 'Stacks[0].Outputs[?OutputKey==`SecurityGroups`].OutputValue' \
+		--output text | sed 's/,/\\\\,/g'))
+	@$(eval subnetids := $(shell $(aws) cloudformation describe-stacks \
+		--stack-name $(service) \
+		--query 'Stacks[0].Outputs[?OutputKey==`SubnetIds`].OutputValue' \
+		--output text | sed 's/,/\\\\,/g'))
+	@$(eval vpcid := $(shell $(aws) cloudformation describe-stacks \
+		--stack-name $(service) \
+		--query 'Stacks[0].Outputs[?OutputKey==`VpcId`].OutputValue' \
+		--output text))
+	@$(eval nodeInstanceProfile :=  $(shell echo "$$(echo $(nodestack) | cut -f 1,2 -d '-')-$$(echo $(nodestack) | rev | cut -f 1 -d '-' | rev)-NodeInstanceProfile"))
 	aws cloudformation update-stack \
 		--capabilities CAPABILITY_IAM \
-		--stack-name eks-dev-workers \
+		--stack-name $(workersStackName) \
 		--template-body file://cloudformation/amazon-eks-nodegroup.yaml \
-		--parameter ParameterKey=ClusterControlPlaneSecurityGroup,ParameterValue=sg-081d7a210689c259c \
-			ParameterKey=ClusterName,ParameterValue=eks-dev \
+		--parameter ParameterKey=ClusterControlPlaneSecurityGroup,ParameterValue=$(securitygroups) \
+			ParameterKey=ClusterName,ParameterValue=$(eksName) \
 			ParameterKey=KeyName,ParameterValue=eks-node-secrets-keypair \
 			ParameterKey=NodeAutoScalingGroupDesiredCapacity,ParameterValue=3 \
-			ParameterKey=NodeAutoScalingGroupMaxSize,ParameterValue=10 \
+			ParameterKey=NodeAutoScalingGroupMaxSize,ParameterValue=5 \
 			ParameterKey=NodeAutoScalingGroupMinSize,ParameterValue=1 \
-			ParameterKey=NodeGroupName,ParameterValue=eks-dev-workers \
-			ParameterKey=NodeImageId,ParameterValue=ami-0842e3f57a7f2db2e \
-			ParameterKey=NodeInstanceType,ParameterValue=t2.medium \
-			ParameterKey=SpotPrice,ParameterValue=0.0464 \
+			ParameterKey=NodeGroupName,ParameterValue=$(nodeGroupName) \
+			ParameterKey=NodeImageId,ParameterValue=$(ami) \
+			ParameterKey=NodeInstanceType,ParameterValue=$(nodeInstanceType) \
+			ParameterKey=SpotPrice,ParameterValue=$(spotPrice) \
 			ParameterKey=NodeVolumeSize,ParameterValue=8 \
-			ParameterKey=Subnets,ParameterValue=subnet-0474af036f25654cc\\,subnet-00383d6a872fa1ed9\\,subnet-08536f57e2fe76f83 \
-			ParameterKey=VpcId,ParameterValue=vpc-06d6cf0bec368d195
+			ParameterKey=Subnets,ParameterValue=$(subnetids)
+			ParameterKey=VpcId,ParameterValue=$(vpcid)
 
 delete-workers:
-	aws cloudformation delete-stack --stack-name eks-dev-workers
+	aws cloudformation delete-stack --stack-name $(workersStackName)
 
 db-vpc:
 	aws cloudformation create-stack \

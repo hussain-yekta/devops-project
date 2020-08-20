@@ -403,7 +403,7 @@ Resources:
     Properties:
       Path: /
       Roles:
-        - Ref: NodeInstanceRole
+        - !Ref NodeInstanceRole
 
   NodeSecurityGroup:
     Type: "AWS::EC2::SecurityGroup"
@@ -498,7 +498,7 @@ Resources:
       InstanceType: !Ref NodeInstanceType
       KeyName: !Ref KeyName
       SecurityGroups:
-        - Ref: NodeSecurityGroup
+        - !Ref NodeSecurityGroup
       SpotPrice: !Ref SpotPrice
       UserData: !Base64
         "Fn::Sub": |
