@@ -67,6 +67,10 @@ Parameters:
     Type: String
     Description: Unique identifier for the Node Group.
 
+  NodeInstanceProfile:
+    Description: Node Instance profile for EKS worker nodes
+    Type: String
+
   NodeImageId:
     Type: String
     Default: ""
@@ -361,17 +365,7 @@ Parameters:
   VpcId:
     Type: "AWS::EC2::VPC::Id"
     Description: The VPC of the worker instances
-
-Mappings:
-  PartitionMap:
-    aws:
-      EC2ServicePrincipal: "ec2.amazonaws.com"
-    aws-cn:
-      EC2ServicePrincipal: "ec2.amazonaws.com.cn"
-    aws-iso:
-      EC2ServicePrincipal: "ec2.c2s.ic.gov"
-    aws-iso-b:
-      EC2ServicePrincipal: "ec2.sc2s.sgov.gov"
+    
 
 Conditions:
   HasNodeImageId: !Not
@@ -380,31 +374,6 @@ Conditions:
         - ""
 
 Resources:
-  NodeInstanceRole:
-    Type: "AWS::IAM::Role"
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - !FindInMap [PartitionMap, !Ref "AWS::Partition", EC2ServicePrincipal]
-            Action:
-              - "sts:AssumeRole"
-      ManagedPolicyArns:
-        - !Sub "arn:${AWS::Partition}:iam::aws:policy/AmazonEKSWorkerNodePolicy"
-        - !Sub "arn:${AWS::Partition}:iam::aws:policy/AmazonEKS_CNI_Policy"
-        - !Sub "arn:${AWS::Partition}:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
-      Path: /
-
-  NodeInstanceProfile:
-    Type: "AWS::IAM::InstanceProfile"
-    Properties:
-      Path: /
-      Roles:
-        - !Ref NodeInstanceRole
-
   NodeSecurityGroup:
     Type: "AWS::EC2::SecurityGroup"
     Properties:
@@ -480,43 +449,26 @@ Resources:
       SourceSecurityGroupId: !Ref ClusterControlPlaneSecurityGroup
       ToPort: 443
 
-  NodeLaunchConfig:
-    Type: "AWS::AutoScaling::LaunchConfiguration"
-    Properties:
-      AssociatePublicIpAddress: true
-      BlockDeviceMappings:
-        - DeviceName: /dev/xvda
-          Ebs:
-            DeleteOnTermination: true
-            VolumeSize: !Ref NodeVolumeSize
-            VolumeType: gp2
-      IamInstanceProfile: !Ref NodeInstanceProfile
-      ImageId: !If
-        - HasNodeImageId
-        - Ref: NodeImageId
-        - Ref: NodeImageIdSSMParam
-      InstanceType: !Ref NodeInstanceType
-      KeyName: !Ref KeyName
-      SecurityGroups:
-        - !Ref NodeSecurityGroup
-      SpotPrice: !Ref SpotPrice
-      UserData: !Base64
-        "Fn::Sub": |
-          #!/bin/bash
-          set -o xtrace
-          /etc/eks/bootstrap.sh ${ClusterName} ${BootstrapArguments}
-          /opt/aws/bin/cfn-signal --exit-code $? \
-                   --stack  ${AWS::StackName} \
-                   --resource NodeGroup  \
-                   --region ${AWS::Region}
-
   NodeGroup:
     Type: "AWS::AutoScaling::AutoScalingGroup"
     Properties:
       DesiredCapacity: !Ref NodeAutoScalingGroupDesiredCapacity
-      LaunchConfigurationName: !Ref NodeLaunchConfig
       MaxSize: !Ref NodeAutoScalingGroupMaxSize
       MinSize: !Ref NodeAutoScalingGroupMinSize
+      MixedInstancesPolicy:
+        LaunchTemplate:
+          LaunchTemplateSpecification:
+            LaunchTemplateName: !Sub '${AWS::StackName}'
+            Version: !GetAtt
+              - NodeGroupLaunchTemplate
+              - LatestVersionNumber
+          Overrides:
+            - InstanceType: !Ref NodeInstanceType
+            - InstanceType: t3.medium
+            - InstanceType: t3a.medium
+            - InstanceType: a1.large
+        InstancesDistribution:
+          SpotMaxPrice: !Ref SpotPrice
       Tags:
         - Key: Name
           PropagateAtLaunch: true
@@ -531,11 +483,52 @@ Resources:
         MinInstancesInService: !Ref NodeAutoScalingGroupDesiredCapacity
         PauseTime: PT5M
 
-Outputs:
-  NodeInstanceRole:
-    Description: The node instance role
-    Value: !GetAtt NodeInstanceRole.Arn
+  NodeGroupLaunchTemplate:
+    Type: 'AWS::EC2::LaunchTemplate'
+    Properties:
+      LaunchTemplateData:
+        IamInstanceProfile:
+          Name: !Ref NodeInstanceProfile
+        ImageId: !If
+          - HasNodeImageId
+          - Ref: NodeImageId
+          - Ref: NodeImageIdSSMParam
+        InstanceType: !Ref NodeInstanceType
+        KeyName: !Ref KeyName
+        NetworkInterfaces:
+          - DeviceIndex: 0
+            Groups:
+              - !Ref NodeSecurityGroup
+            AssociatePublicIpAddress: true
+        TagSpecifications:
+          -
+            ResourceType: instance
+            Tags:
+              - Key: Name
+                Value: !Sub "${ClusterName}-${NodeGroupName}-Node"
+              - Key: KubernetesCluster
+                Value: !Ref ClusterName
+              - Key: !Sub 'kubernetes.io/cluster/${ClusterName}'
+                Value: 'owned'
+        BlockDeviceMappings: # gp2 may not work with small t2/t3 instances
+          - DeviceName: /dev/xvda
+            Ebs:
+              VolumeSize: !Ref NodeVolumeSize
+              VolumeType: gp2
+              DeleteOnTermination: true
+        UserData:
+          Fn::Base64:
+            !Sub |
+            #!/bin/bash
+            set -o xtrace
+            /etc/eks/bootstrap.sh ${ClusterName} ${BootstrapArguments}
+            /opt/aws/bin/cfn-signal --exit-code $? \
+                     --stack  ${AWS::StackName} \
+                     --resource NodeGroup  \
+                     --region ${AWS::Region}
+      LaunchTemplateName: !Sub '${AWS::StackName}'
 
+Outputs:
   NodeSecurityGroup:
     Description: The security group for the node group
     Value: !Ref NodeSecurityGroup

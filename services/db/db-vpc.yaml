@@ -14,6 +14,8 @@ Parameters:
   Subnet03Block:
     Type: String
     Description: CidrBlock for subnet 03 within the VPC
+
+    
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
@@ -25,6 +27,8 @@ Metadata:
           - Subnet01Block
           - Subnet02Block
           - Subnet03Block
+
+
 Resources:
   VPC:
     Type: AWS::EC2::VPC
@@ -129,6 +133,8 @@ Resources:
     Properties:
       GroupDescription: Cluster communication with worker nodes
       VpcId: !Ref VPC
+
+
 Outputs:
   SubnetsPrivate:
     Description: 'Subnets private'
