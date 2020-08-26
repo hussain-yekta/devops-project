@@ -1,7 +1,7 @@
 ---
 # Source: grafana/templates/tests/test-podsecuritypolicy.yaml
 
-apiVersion: extensions/v1beta1
+apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
 metadata:
   name: release-name-grafana-test
