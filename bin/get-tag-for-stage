@@ -32,11 +32,19 @@ shift $((OPTIND -1))
 #
 
 stage=$(basename $stagefile)
-pattern='(production|rc|staging).*'
+pattern='(production|rc).*'
 
 if [[ $stage =~ ${pattern} ]]
 then
     version=$(grep '^version=' $stagefile | cut -d'=' -f2)
+elif [[ $stage =~ 'staging' ]]
+then
+  if grep -q '^version=' $stagefile
+  then
+    version=$(grep '^version=' $stagefile | cut -d'=' -f2)
+  else
+    version="git-$(git rev-parse HEAD | cut -c 1-7)"
+  fi
 else
     version="git-$(git rev-parse HEAD | cut -c 1-7)"
 fi
