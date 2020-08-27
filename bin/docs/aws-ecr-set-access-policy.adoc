@@ -1,0 +1,50 @@
+= aws-ecr-set-access-policy(1)
+ilearndevops@gmail.com
+v1.0.0
+:doctype: manpage
+:manmanual: aws-ecr-set-access-policy
+:mansource: aws-ecr-set-access-policy
+:man-linkstyle: pass:[blue R < >]
+
+== Name
+
+aws-ecr-set-access-policy - set access policies in ECR
+
+== Synopsis
+
+*aws-ecr-set-access-policy* [--help] [--repository-name <repository_name>] [--dir <access_policy_dir>]
+
+== Description
+
+This script sets access policies in ECR repository
+
+== Options
+
+*--help, -h*::
+  Print this man page.
+
+*--repository-name, -R*::
+  The ECR repository name
+
+*--dir, -d*::
+  The _access_policy_dir_ where ecr access policy is located
+  The default value of _access_policy_dir_ is "./aws".
+
+== Exit status
+
+*0*::
+  Success.
+  Access policy is attached.
+
+*>0*::
+  Failure.
+  Failed to set access policy.
+
+== See also
+
+* <<aws-ecr-create-repository#,aws-ecr-create-repository>>
+* <<aws-ecr-set-lifecycle-policies#,aws-ecr-set-lifecycle-policies>>
+
+== Copyright
+
+Copyright (C) 2020 312-school +

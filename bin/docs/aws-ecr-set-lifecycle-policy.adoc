@@ -1,0 +1,57 @@
+= aws-ecr-set-lifecycle-policy(1)
+ilearndevops@gmail.com
+v1.0.0
+:doctype: manpage
+:manmanual: aws-ecr-set-lifecycle-policy
+:mansource: aws-ecr-set-lifecycle-policy
+:man-linkstyle: pass:[blue R < >]
+
+== Name
+
+aws-ecr-set-lifecycle-policy - set lifecycle policies in ECR to cleanup images
+
+== Synopsis
+
+*aws-ecr-set-lifecycle-policy* [--help] [--repository-name <repository_name>]
+
+== Description
+
+This script sets lifecycle policies to ECR repository.
+Based on lifecycle policy, certain images will be removed from ECR repository
+
+== Options
+
+*--help, -h*::
+  Print this man page.
+
+*--repository-name, -R*::
+  The ECR repository name
+
+== Exit status
+
+*0*::
+  Success.
+  Lifecycle policies are created in AWS ECR.
+
+*>0*::
+  Failure.
+  Failed to create lifecycle policy.
+
+== Example
+
+$ aws-ecr-set-lifecycle-policy --repository-name repo-name
+{
+    "lifecyclePolicyText": "{\"rules\":[{\"rulePriority\":1,\"description\":\"Keep images with rc prefix in tag\",\"selection\":{\"tagStatus\":\"tagged\",\"tagPrefixList\":[\"rc\"],\"countType\":\"imageCountMoreThan\",\"countNumber\":10000},\"action\":{\"type\":\"expire\"}},{\"rulePriority\":2,\"description\":\"Delete all untagged images\",\"selection\":{\"tagStatus\":\"untagged\",\"countType\":\"sinceImagePushed\",\"countUnit\":\"days\",\"countNumber\":1},\"action\":{\"type\":\"expire\"}},{\"rulePriority\":3,\"description\":\"Delete all images that are tagged by git hash and pushed 30 days ago\",\"selection\":{\"tagStatus\":\"tagged\",\"tagPrefixList\":[\"git\"],\"countType\":\"sinceImagePushed\",\"countUnit\":\"days\",\"countNumber\":30},\"action\":{\"type\":\"expire\"}}]}",
+    "repositoryName": "repo-name",
+    "registryId": "123456789012"
+}
+
+== See also
+
+* <<aws-ecr-create-repository#,aws-ecr-create-repository>>
+* <<aws-ecr-set-access-policy#,aws-ecr-set-access-policy>>
+* <<aws-ecr-set-lifecycle-policies#,aws-ecr-set-lifecycle-policies>>
+
+== Copyright
+
+Copyright (C) 2020 312-school +

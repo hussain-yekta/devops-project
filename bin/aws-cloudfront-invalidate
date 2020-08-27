@@ -1,0 +1,12 @@
+#!/bin/bash
+
+#
+# Script to invalidate (purge) a cloudfront distribution.
+#
+
+set -e
+
+partner=$1
+id=$(aws cloudfront list-distributions --output text --query "DistributionList.Items[].{Id: Id, Alias: Aliases.Items[0]}[?Alias=='$partner'].Id")
+echo id=$id
+aws cloudfront create-invalidation --distribution-id $id --invalidation-batch file://aws-cloudfront-invalidate.json

@@ -1,0 +1,60 @@
+=  bash-sample(1)
+ilearndevops@gmail.com
+v1.0.0
+:doctype: manpage
+:manmanual:  doc-sample
+:mansource:  doc-sample
+:man-linkstyle: pass:[blue R < >]
+
+== Name
+
+ bash-sample - sample documentation and options processing in shell
+
+== Synopsis
+
+* doc-sample* [--help]
+
+== Description
+
+This script provides a style guide on how to document shell scripts and
+process command line arguments.
+
+The preferred documentation format is https://asciidoctor.org[AsciiDoc], with
+one _.adoc_ man page for each executable command. The rationale for AsciiDoc
+over markdown can be found https://asciidoctor.org/docs/asciidoc-vs-markdown/[here].
+See https://asciidoctor.org/docs/asciidoc-syntax-quick-reference/[this page]
+for a quick reference on AsciiDoc syntax.
+
+The preferred way of options processing options is the bash _getopts_ builtin
+function. In addition, it is also preferred to always use long form options names.
+This script illustrates how to do this with _getopts_.
+
+== Options
+
+*--help, -h*::
+  Print this man page.
+
+== Examples
+
+Sometimes you may feel a need for this section, so you can better illustrate
+some command usage, or program behavior and output.
+
+== Exit status
+
+*0*::
+  Success.
+  The man page was not displayed.
+
+*1*::
+  Failure.
+  The man page was displayed.
+
+== See also
+
+* https://asciidoctor.org/docs/asciidoc-syntax-quick-reference/[AsciiDoc syntax quick reference]
+* https://asciidoctor.org/docs/user-manual/#installing-the-asciidoctor-ruby-gem[Install asciidoctor]
+* https://asciidoctor.org/docs/user-manual/#man-pages[AsciiDoc manpage format]
+
+== Copyright
+
+Copyright (C) 2020 312-school +

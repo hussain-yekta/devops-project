@@ -1,0 +1,22 @@
+#!/bin/bash
+
+#
+# Script to create/deploy a cloudfront distribution.
+#
+
+set -e
+
+partner=$1
+# temporary file to hold the processed template
+tempfile=$(mktemp)
+# generate a random 13 digit reference number
+reference=$(LC_CTYPE=C tr -c -d 0-9 < /dev/urandom | head -c 13)
+
+sed -e "s/\${partner}/${partner}/" -e "s/\${reference}/${reference}/" \
+  aws-cloudfront-distribution-template.json >> $tempfile
+cat $tempfile
+
+echo creating cloudfront distribution
+aws cloudfront create-distribution --distribution-config file://$tempfile
+
+rm $tempfile

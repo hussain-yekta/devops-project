@@ -1,0 +1,60 @@
+= aws-sts-assume-role(1)
+ilearndevops@gmail.com
+v1.0.0
+:doctype: manpage
+:manmanual:  doc-sample
+:mansource:  doc-sample
+:man-linkstyle: pass:[blue R < >]
+
+== Name
+
+aws-sts-assume-role - assume an aws role in bash
+
+== Synopsis
+
+*aws-sts-assume-role* [--help] [--profile profile]
+
+== Description
+
+This script lets you change AWS roles using bash only. It runs on linux
+or OSX with just aws cli installed.
+
+The script uses profiles defined in _~/.aws/config_ to assume the role. Your
+configuration file must contain a profile that matches the name passed via
+_--profile_. That profile in turn must contain a _role_arn_ that points to
+the role to assume, and a source_profile that point to an authorized set of
+credentails in _~/.as/credentials_.
+
+== Options
+
+*--help, -h*::
+  Print this man page.
+
+*--profile, -p*::
+  Specify the name of the _profile_ to use to assume the role. The profile must
+  exist in your ~/.aws/config file.
+
+== Examples
+
+[source,bash]
+----
+aws-sts-assume-role --profile eks-dev
+----
+
+== Exit status
+
+*0*::
+  Success.
+  The assume role operation succeeded.
+
+*>1*::
+  Failure.
+  The assume role operation failed.
+
+== See also
+
+* https://docs.aws.amazon.com/cli/latest/reference/sts/assume-role.html[aws sts assume-role]
+
+== Copyright
+
+Copyright (C) 2020 312-school +

@@ -1,0 +1,88 @@
+#!/bin/bash
+
+set -e
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source "${DIR}/bash-lib"
+
+# Transform long options to short ones
+for arg in "$@"; do
+  shift
+  case "$arg" in
+    "--help")       set -- "$@" "-h" ;;
+    "--repository-name") set -- "$@" "-R" ;;
+    *)              set -- "$@" "$arg"
+  esac
+done
+
+# Parse options
+while getopts ":hR:" opt; do
+  case ${opt} in
+    h ) manpage ;;
+    R ) repository="${OPTARG}";;
+    ? ) usage ;;
+  esac
+done
+shift $((OPTIND -1))
+
+# Exit if no repository passed
+if [ -z "$repository" ]
+then
+	usage
+	exit 1
+fi
+
+tmpfile=$(mktemp)
+cat <<EOF > $tmpfile
+{
+  "rules": [
+    {
+      "rulePriority": 1,
+      "description": "Keep images with rc prefix in tag",
+      "selection": {
+          "tagStatus": "tagged",
+          "tagPrefixList":["rc"],
+          "countType": "imageCountMoreThan",
+          "countNumber": 10000
+      },
+      "action": {
+          "type": "expire"
+      }
+    },
+    {
+      "rulePriority": 2,
+      "description": "Delete all untagged images",
+      "selection": {
+          "tagStatus": "untagged",
+          "countType": "sinceImagePushed",
+          "countUnit": "days",
+          "countNumber": 1
+      },
+      "action": {
+          "type": "expire"
+      }
+    },
+    {
+      "rulePriority": 3,
+      "description": "Delete all images that are tagged by git hash and pushed 30 days ago",
+      "selection": {
+          "tagStatus": "tagged",
+          "tagPrefixList":["git"],
+          "countType": "sinceImagePushed",
+          "countUnit": "days",
+          "countNumber": 30
+      },
+      "action": {
+          "type": "expire"
+      }
+    }
+  ]
+}
+EOF
+
+registryId=$(aws sts get-caller-identity --output text --query 'Account')
+
+aws ecr put-lifecycle-policy --registry-id $registryId \
+    --repository-name $repository \
+    --lifecycle-policy-text file://$tmpfile
+
+exit 0

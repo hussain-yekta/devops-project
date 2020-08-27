@@ -1,0 +1,57 @@
+#!/bin/bash
+
+set -e
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source "${DIR}/bash-lib"
+
+# Transform long options to short ones
+for arg in "$@"; do
+  shift
+  case "$arg" in
+    "--help")       set -- "$@" "-h" ;;
+    "--application-name") set -- "$@" "-a" ;;
+    "--experimental") set -- "$@" "-e" ;;
+    *)              set -- "$@" "$arg"
+  esac
+done
+
+# Parse options
+while getopts ":hea:" opt; do
+  case ${opt} in
+    h ) manpage ;;
+    a ) applicationName="${OPTARG}" ;;
+    e ) experimental=true ;;
+    ? ) usage ;;
+  esac
+done
+shift $((OPTIND -1))
+
+# Exit if cluster name not provided
+if [[ -z "$applicationName" ]]; then
+  usage
+  exit 1
+fi
+
+stable_cluster() {
+    local appName=${1}
+    case ${appName} in
+        *) stable_cluster=${appName};;
+    esac
+    echo $stable_cluster
+}
+
+experimental_cluster() {
+    local appName=${1}
+    case ${appName} in
+        *) stable_cluster=${appName};;
+    esac
+    echo $stable_cluster
+}
+
+if [[ "$experimental" = true ]]; then
+  aws eks update-kubeconfig --name $(experimental_cluster ${applicationName})
+else
+  aws eks update-kubeconfig --name $(stable_cluster ${applicationName})
+fi
+
+exit 0

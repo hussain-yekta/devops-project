@@ -1,0 +1,31 @@
+#!/bin/bash
+
+#
+# Script to create/deploy a cloudfront distribution.
+#
+
+set -e
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source "${DIR}/bash-lib"
+
+partner=$1
+# temporary file to hold the processed template
+tempfile=$(mktemp)
+
+# limelight
+domainname="EXAMPLE-NAME"
+
+# cloudfront
+# get the origin name from the cloudfront distribution for this partner
+#domainname=$(aws cloudfront list-distributions --output text --query "DistributionList.Items[].{DomainName: DomainName, OriginDomainName: Origins.Items[0].DomainName, DistributionId: Id}[?contains(OriginDomainName, '$partner')] | [0].DomainName")
+
+sed -e "s/\${partner}/${partner}/" -e "s/\${domainname}/${domainname}/" \
+  $DIR/aws-route53-cname-template.json >> $tempfile
+cat $tempfile
+
+echo creating route53 cname
+toplevel=$(echo $partner | grep -o '[^.]*\.[^.]*$')
+zoneid=$(basename $(aws route53 list-hosted-zones-by-name --output text --query "HostedZones[].{Id: Id, Name: Name}[?contains(Name, '${toplevel}.')] | [0].Id"))
+aws route53 change-resource-record-sets --hosted-zone-id $zoneid --change-batch file://$tempfile
+
+rm $tempfile

@@ -1,0 +1,48 @@
+#!/bin/bash
+
+set -e
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source "${DIR}/bash-lib"
+
+# Transform long options to short ones
+for arg in "$@"; do
+  shift
+  case "$arg" in
+    "--help")       set -- "$@" "-h" ;;
+    "--repository-name") set -- "$@" "-R" ;;
+    "--dir") set -- "$@" "-d";;
+    *)              set -- "$@" "$arg"
+  esac
+done
+
+# Parse options
+while getopts ":hR:d:" opt; do
+  case ${opt} in
+    h ) manpage ;;
+    R ) repository="${OPTARG}";;
+    d ) accessPolicyDir="${OPTARG}";;
+    ? ) usage ;;
+  esac
+done
+shift $((OPTIND -1))
+
+# Exit if no repository or service passed
+if [ -z "$repository" ]
+then
+	usage
+	exit 1
+fi
+
+# Set default accessPolicyDir if not provided
+if [ -z "$accessPolicyDir" ]
+then
+    accessPolicyDir="./aws"
+fi
+
+if [[ -f ${accessPolicyDir}/ecr-repository-access-policy.json ]]
+then
+  aws ecr set-repository-policy --repository-name $repository \
+	 --policy-text "file://${accessPolicyDir}/ecr-repository-access-policy.json"
+fi
+
+exit 0
