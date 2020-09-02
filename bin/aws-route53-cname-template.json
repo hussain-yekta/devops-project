@@ -1,0 +1,18 @@
+{
+    "Comment": "CNAME record",
+    "Changes": [
+        {
+            "Action": "UPSERT",
+            "ResourceRecordSet": {
+                "Name": "${partner}",
+                "Type": "CNAME",
+                "TTL": 300,
+                "ResourceRecords": [
+                    {
+                        "Value": "${domainname}"
+                    }
+                ]
+            }
+        }
+    ]
+}

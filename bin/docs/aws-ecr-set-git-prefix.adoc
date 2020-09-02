@@ -1,0 +1,53 @@
+= aws-ecr-set-git-prefix(1)
+ilearndevops@gmail.com
+v1.0.0
+:doctype: manpage
+:manmanual: aws-ecr-set-git-prefix
+:mansource: aws-ecr-set-git-prefix
+:man-linkstyle: pass:[blue R < >]
+
+== Name
+
+aws-ecr-set-git-prefix - tag ECR images with "git-" prefix
+
+== Synopsis
+
+*aws-ecr-set-git-prefix* [--help] [--repository-name <repository_name>] [--modify true|false] [--exclude _arg1_,_arg2_,..._argN_]
+
+== Description
+
+This script adds "git-" prefixed tag to ECR images that were already tagged with git commit hash before.
+
+== Options
+
+*--help, -h*::
+  Print this man page.
+
+*--repository-name, -R*::
+  The ECR repository name
+
+*--modify, -m*::
+  Specify this option to make the changes, without this option - script will do dry run
+
+*--exclude, -e*::
+  Specify image tags that you want to exclude from modification
+
+== Exit status
+
+*0*::
+  Success.
+  Tagged ECR images with "git-" prefix.
+
+*>0*::
+  Failure.
+  Failed to tag with "git-" prefix.
+
+== See also
+
+* <<aws-ecr-create-repository#,aws-ecr-create-repository>>
+* <<aws-ecr-set-access-policy#,aws-ecr-set-access-policy>>
+* <<aws-ecr-set-lifecycle-policies#,aws-ecr-set-lifecycle-policies>>
+
+== Copyright
+
+Copyright (C) 2020 312-school +

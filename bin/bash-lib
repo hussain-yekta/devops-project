@@ -1,0 +1,65 @@
+#!/bin/bash
+#
+# A style guide for devops shell scripts
+# The documentation is located under ./docs/
+#
+
+
+#
+# Display the man page for the current ($0) command
+#
+function manpage
+{
+  # Get the script's directory
+  DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+  # Check if asciidoctor is installed
+  which asciidoctor >/dev/null ||
+    { echo "please install asciidoctor: sudo gem install asciidoctor" && exit 1; }
+  # Display the man page
+  asciidoctor -b manpage --out-file=/tmp/$$ "${DIR}"/docs/$(basename "${0}").adoc \
+    && man /tmp/$$ && rm /tmp/$$
+  exit 1
+}
+
+#
+# Display a usage summary
+#
+function usage
+{
+  echo "Error: invalid arguments"
+  DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+  docpage="${DIR}"/docs/$(basename "${0}").adoc
+  cat "${docpage}" | sed -n '/^== Synopsis/,/^== /p;' | tail -n +3 | head -n +1 | tr -d '*'
+  cat  "${docpage}" | sed -n '/^== Options/,/^== /p;' | tail -n +3 | sed -e :a -e '$d;N;2,2ba' -e 'P;D' | tr -d '*'
+  exit 1
+}
+
+#
+# Assume a different AWS role
+#
+function aws-assume-role
+{
+  profile=$1
+  config=$(cat ~/.aws/config | grep -A 4 "$profile")
+  rolearn=$(echo "$config" | grep role_arn | cut -d'=' -f2 | tr -d '[:space:]')
+  sourceprofile=$(echo "$config" | grep source_profile | cut -d'=' -f2 | tr -d '[:space:]')
+
+  unset AWS_ACCESS_KEY_ID
+  unset AWS_SECRET_ACCESS_KEY
+  unset AWS_SESSION_TOKEN
+  unset AWS_ACCOUNT
+  unset AWS_SECURITY_TOKEN
+
+  JSON=$(aws sts --profile="${sourceprofile}" assume-role \
+           --role-arn "${rolearn}" \
+           --role-session-name "assume-role-${$}" \
+           --duration-seconds ${AWS_STS_DURATION_SECONDS:-3600} \
+           ) || { echo "Error assuming role" && exit 1; }
+
+cat <<EOF
+export AWS_ACCESS_KEY_ID=$(echo ${JSON} | jq --raw-output ".Credentials[\"AccessKeyId\"]")
+export AWS_SECRET_ACCESS_KEY=$(echo ${JSON} | jq --raw-output ".Credentials[\"SecretAccessKey\"]")
+export AWS_SESSION_TOKEN=$(echo ${JSON} | jq --raw-output ".Credentials[\"SessionToken\"]")
+export AWS_EXPIRATION=$(echo ${JSON} | jq --raw-output ".Credentials[\"Expiration\"]")
+EOF
+}

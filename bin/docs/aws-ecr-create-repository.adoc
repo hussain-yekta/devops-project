@@ -1,0 +1,51 @@
+= aws-ecr-create-repository(1)
+ilearndevops@gmail.com
+v1.0.0
+:doctype: manpage
+:manmanual: aws-ecr-create-repository
+:mansource: aws-ecr-create-repository
+:man-linkstyle: pass:[blue R < >]
+
+== Name
+
+aws-ecr-create-repository - create an AWS ECR repository
+
+== Synopsis
+
+*aws-ecr-create-repository* [--help] [--repository-name _repository_] [--dir <ecr_dir>]
+
+== Description
+
+This script creates the specified _repository_ in a AWS ECR container registry.
+The registry to use is determined by aws-ecr-login.
+
+== Options
+
+*--help, -h*::
+  Print this man page.
+
+*--repository-name, -r*::
+  The name of the _repository_ to create.
+
+*--dir, -d*::
+  The _ecr_dir_ where ecr related files are located
+  The default value of _ecr_dir_ is "./aws".
+
+== Exit status
+
+*0*::
+  Success.
+  The repository was created in the ECR.
+
+*>0*::
+  Failure.
+  The repository creation failed.
+
+== See also
+
+* <<aws-ecr-login#,aws-ecr-login>>
+* <<aws-ecr-push-image#,[aws-ecr-push-image>>
+
+== Copyright
+
+Copyright (C) 2020 312-school +

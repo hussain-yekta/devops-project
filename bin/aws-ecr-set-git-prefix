@@ -1,0 +1,73 @@
+#!/bin/bash
+
+set -e
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source "${DIR}/bash-lib"
+
+# Transform long options to short ones
+for arg in "$@"; do
+  shift
+  case "$arg" in
+    "--help")       set -- "$@" "-h" ;;
+    "--repository-name") set -- "$@" "-R" ;;
+    "--modify") set -- "$@" "-m" ;;
+    "--exclude") set -- "$@" "-e" ;;
+    *)              set -- "$@" "$arg"
+  esac
+done
+
+# Parse options
+while getopts ":hmR:e:" opt; do
+  case ${opt} in
+    h ) manpage ;;
+    R ) repository="${OPTARG}";;
+    e ) excludedImageTags="${OPTARG}";;
+    m ) modify=true;;
+    ? ) usage ;;
+  esac
+done
+shift $((OPTIND -1))
+
+# Exit if no repository passed
+if [ -z "$repository" ]
+then
+	usage
+	exit 1
+fi
+
+gitTagPrefix="git"
+
+if [ ! -z "${excludedImageTags}" ]; then
+  declare -a imagesDigest
+  for tag in ${excludedImageTags//,/ }; do
+    imageTags+=($tag)
+  done
+fi
+
+function setImageTag {
+  imagesWithHashTag=$1
+  for imageTag in $imagesWithHashTag; do
+    if [[ ! " ${imageTags[@]} " =~ " ${imageTag} " ]]; then
+      MANIFEST=$(aws ecr batch-get-image --repository-name $repository \
+            --image-ids imageTag=$imageTag --query 'images[].imageManifest' --output text)
+      aws ecr put-image --repository-name $repository \
+          --image-tag $gitTagPrefix-${imageTag} --image-manifest "$MANIFEST"
+    fi
+  done
+}
+
+if [ "$modify" = true ]; then
+  imagesWithLongHashTag=$(aws ecr list-images --repository-name $repository --filter tagStatus=TAGGED \
+          | jq -r '.imageIds[] | select(.imageTag|test("^[0-9a-fA-F]+$")) | select(.imageTag|length==40) | .imageTag')
+  imagesWithShortHashTag=$(aws ecr list-images --repository-name $repository --filter tagStatus=TAGGED \
+          | jq -r '.imageIds[] | select(.imageTag|test("^[0-9a-fA-F]+$")) | select(.imageTag|length==7) | .imageTag')
+  [[ ! -z "${imagesWithLongHashTag}" ]] && setImageTag $imagesWithLongHashTag
+  [[ ! -z "${imagesWithShortHashTag}" ]] && setImageTag $imagesWithShortHashTag
+else
+  aws ecr list-images --repository-name $repository --filter tagStatus=TAGGED \
+        | jq -r '.imageIds[] | select(.imageTag|test("^[0-9a-fA-F]+$")) | select(.imageTag|length==7) | .imageTag'
+  aws ecr list-images --repository-name $repository --filter tagStatus=TAGGED \
+          | jq -r '.imageIds[] | select(.imageTag|test("^[0-9a-fA-F]+$")) | select(.imageTag|length==40) | .imageTag'
+fi
+
+exit 0

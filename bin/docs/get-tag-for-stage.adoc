@@ -1,0 +1,50 @@
+=  get-tag-for-stage(1)
+ilearndevops@gmail.com
+v1.0.0
+:doctype: manpage
+:manmanual:  get-tag-for-stage
+:mansource:  get-tag-for-stage
+:man-linkstyle: pass:[blue R < >]
+
+== Name
+
+ get-tag-for-stage - get a version from a stage file
+
+== Synopsis
+
+* get-tag-for-stage* [--help] [--stage-file _file_]
+
+== Description
+
+This command calculates a docker tag for a given stage file. If the stage is
+a production or release candidate stage, the tag is looked up from the
+_version_ variable in stage file itself. If the stage is a development or
+staging stage the tag is calculated from the git SHA of the local branch.
+
+== Options
+
+*--help, -h*::
+  Print this man page.
+
+*--stage-file, -s*::
+  A path to the stage file to use.
+
+== Exit status
+
+*0*::
+  Success.
+  A tag was calculated and returned.
+
+*1*::
+  Failure.
+  A tag could not be calculated. This can occur if the tag is
+  looked up from the stage file and _version_ is not defined there,
+  or if there is a problem retrieving the git SHA of the current directory.
+
+== See also
+
+* get-stage-from-branch
+
+== Copyright
+
+Copyright (C) 2020 312-school +

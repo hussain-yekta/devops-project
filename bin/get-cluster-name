@@ -1,0 +1,36 @@
+#!/bin/bash
+
+set -e
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source "${DIR}/bash-lib"
+# Transform long options to short ones
+for arg in "$@"; do
+  shift
+  case "$arg" in
+    "--help")   set -- "$@" "-h" ;;
+    *)          set -- "$@" "$arg"
+  esac
+done
+# Parse options
+while getopts ":h" opt; do
+  case ${opt} in
+    h ) manpage ;;
+    ? ) usage ;;
+  esac
+done
+shift $((OPTIND -1))
+
+# This script returns the cluster info.
+
+if [[ -z $KUBERNETES_SERVICE_HOST ]]; then
+  # If running locally
+  cluster=$(kubectl config current-context | cut -f 2 -d '/')
+else
+  # If running in a pod
+  region=$(aws-eks-get-pod-region)
+  cluster=$(aws --region ${region} ec2 describe-tags  \
+    --filters "Name=resource-id,Values=$(curl -s 169.254.169.254/latest/meta-data/instance-id -m 10)" \
+    --query 'Tags[?starts_with(Key, `kubernetes.io/cluster/`) == `true`].Key' --output text | cut -f3 -d'/')
+fi
+
+echo "$cluster"

@@ -1,0 +1,31 @@
+#!/bin/bash
+#
+# A style guide for devops shell scripts
+# The documentation is located under ./docs/
+#
+set -e
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source "${DIR}/bash-lib"
+
+# Transform long options to short ones
+for arg in "$@"; do
+  shift
+  case "$arg" in
+    "--help")   set -- "$@" "-h" ;;
+    *)          set -- "$@" "$arg"
+  esac
+done
+
+# Parse options
+while getopts ":h" opt; do
+  case ${opt} in
+    h ) manpage ;;
+    ? ) usage ;;
+  esac
+done
+shift $((OPTIND -1))
+
+# Main script starts here
+usage
+
+exit 0

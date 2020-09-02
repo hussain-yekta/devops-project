@@ -1,0 +1,38 @@
+#!/bin/bash
+#
+# Log into one or more AWS ECR container registries
+#
+set -e
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source "${DIR}/bash-lib"
+
+# Transform long options to short ones
+for arg in "$@"; do
+  shift
+  case "$arg" in
+    "--help")         set -- "$@" "-h" ;;
+    "--profile")      set -- "$@" "-p" ;;
+    *)                set -- "$@" "$arg"
+  esac
+done
+
+# Parse options
+while getopts ":hp:" opt; do
+  case ${opt} in
+    h ) usage ;;
+    p ) profile="${OPTARG}";;
+    ? ) usage ;;
+  esac
+done
+shift $((OPTIND -1))
+
+# Exit if cluster name not provided
+if [[ -z "$profile" ]]; then
+  usage
+  exit 1
+fi
+
+# Use the bash-lib lib function to log into the account
+aws-assume-role "$profile"
+
+exit 0

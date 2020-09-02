@@ -1,0 +1,46 @@
+#!/bin/bash
+#
+# Create an ECR repository
+#
+set -e
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source "${DIR}/bash-lib"
+
+# Transform long options to short ones
+for arg in "$@"; do
+  shift
+  case "$arg" in
+    "--help")            set -- "$@" "-h" ;;
+    "--repository-name") set -- "$@" "-R" ;;
+    "--dir") set -- "$@" "-d";;
+    *)          set -- "$@" "$arg"
+  esac
+done
+
+# Parse options
+while getopts ":hR:d:" opt; do
+  case ${opt} in
+    h ) manpage ;;
+    R ) repository="${OPTARG}";;
+    d ) ecrDir="${OPTARG}";;
+    ? ) usage ;;
+  esac
+done
+shift $((OPTIND -1))
+
+# Set default ecrDir if not provided
+if [ -z "$ecrDir" ]
+then
+    ecrDir="./aws"
+fi
+
+# Log into the specified registries
+eval $(aws-ecr-login)
+
+# Create the repository
+aws ecr create-repository --repository-name "${repository}"
+
+eval aws-ecr-set-access-policy --repository-name $repository --dir "${ecrDir}"
+eval aws-ecr-set-lifecycle-policy --repository-name $repository
+
+exit 0

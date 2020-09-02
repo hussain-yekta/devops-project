@@ -1,0 +1,34 @@
+#!/bin/bash
+
+#
+# Script to create/deploy a cloudfront distribution.
+#
+
+set -e
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source "${DIR}/bash-lib"
+
+partner=$1
+bucket="s3://$partner"
+
+# temporary file to hold the processed template
+tempfile=$(mktemp)
+
+echo creating s3 bucket $partner
+aws s3 mb $bucket
+
+# setup the bucket as a web site
+echo setting up bucket as website
+aws s3 website $bucket --index-document index.html --error-document error.html
+
+# set a the bucket policy
+echo setting bucket policy
+sed -e "s/\${bucket}/${partner}/" $DIR/aws-s3-policy-template.json >> $tempfile
+cat $tempfile
+aws s3api put-bucket-policy --bucket $partner --policy file://$tempfile
+rm $tempfile
+
+# ensure the correct cors rules on the serving buckets
+# no need to invalidate the cache for this
+echo setting cors rules
+aws s3api put-bucket-cors --bucket $partner --cors-configuration file://$DIR/aws-s3-cors.json

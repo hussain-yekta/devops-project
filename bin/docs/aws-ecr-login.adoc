@@ -1,0 +1,53 @@
+= aws-ecr-login(1)
+ilearndevops@gmail.com
+v1.0.0
+:doctype: manpage
+:manmanual: aws-ecr-login
+:mansource: aws-ecr-login
+:man-linkstyle: pass:[blue R < >]
+
+== Name
+
+aws-ecr-login - log into an AWS ECR
+
+== Synopsis
+
+*aws-ecr-login* [--help]
+
+== Description
+
+This script logs the user into an AWS ECR. The ECR that is used is the one
+attached to the user's current AWS account and region.
+
+== Options
+
+*--help, -h*::
+  Print this man page.
+
+== Examples
+
+The credential returned on STDOUT must be set in the current shell via eval:
+
+[source,bash]
+----
+eval $(aws-ecr-login)
+----
+
+== Exit status
+
+*0*::
+  Success.
+  The login was successful.
+
+*1*::
+  Failure.
+  The login failed.
+
+== See also
+
+* <<aws-ecr-push-image#,aws-ecr-push-image>>
+* aws sts help
+
+== Copyright
+
+Copyright (C) 2020 312-school +

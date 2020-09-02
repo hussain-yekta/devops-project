@@ -1,0 +1,22 @@
+#!/bin/bash
+#
+# Usage:
+# aws-attach-role-policies <policies-dir> <role-prefix>
+#
+
+set -e
+
+policies=$1
+rolePrefix=$2
+
+roleName=$( aws iam list-roles | \
+	jq -r ".Roles[] | select(.RoleName == \"$rolePrefix\").RoleName" )
+
+for policy in $(ls $policies)
+do
+	echo $policy
+	aws iam put-role-policy \
+		--role-name $roleName \
+		--policy-name ${policy%.json} \
+		--policy-document file://$policies/$policy
+done
