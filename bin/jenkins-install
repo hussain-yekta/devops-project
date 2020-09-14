@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# Set up a jenkins slave
+# This any additional packages necessary to run deployment scripts.
+
+set -e
+
+# Some useful global node packages
+sudo npm install -g jsonlint yarn
+sudo chown -R ubuntu.ubuntu ~/.config/
+
+# The aws cli. The key is pre-installed on the jenkins host.
+# Need --upgrade to get the latest awscli
+sudo pip install --upgrade pip awscli boto3
+aws configure set preview.cloudfront true
+
+# python3
+sudo apt install -y python3 python3-pip
+sudo pip3 install --upgrade pip boto3

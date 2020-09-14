@@ -1,0 +1,19 @@
+#!/bin/bash
+#
+# Basic script to create and setup a partner bucket
+#
+#
+# Later we may want to consolidate into a single bucket with redirections.
+# The docs for this are at
+# http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-s3-websiteconfiguration-routingrules-routingrulecondition.html
+#
+
+set -e
+
+partner=$1
+
+aws-s3-create-bucket $partner
+#aws-cloudfront-create-distribution $partner
+#aws-route53-create-cname $partner
+
+echo $partner created

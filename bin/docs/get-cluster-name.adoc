@@ -1,0 +1,56 @@
+=  get-cluster-name(1)
+ilearndevops@gmail.com
+v1.0.0
+:doctype: manpage
+:manmanual:  get-cluster-name
+:mansource:  get-cluster-name
+:man-linkstyle: pass:[blue R < >]
+
+== Name
+
+ get-cluster-name - get the cluster name from local or k8s pod and pass region to script
+
+== Synopsis
+
+* get-cluster-name* [--help]
+
+== Description
+
+This script return an EKS cluster name. The name is typically used later on to
+target deployment scripts.
+
+If running in a pod, the name of the cluster running the pod is returned.
+If running locally, the cluster pointed to by the current kubernetes context
+is returned
+
+== Options
+
+*--help, -h*::
+  Print this man page.
+
+
+== Examples
+
+
+[source,bash]
+----
+ get-cluster-name us-east-1
+----
+
+== Exit status
+
+*0*::
+  Success.
+  Cluster name will be returned.
+
+*1*::
+  Failure.
+  Script will fail on the pod if region is not passed and cluster name is not returned.
+
+== See also
+
+* << get-stage-from-branch>>
+
+== Copyright
+
+Copyright (C) 2020 312-school +

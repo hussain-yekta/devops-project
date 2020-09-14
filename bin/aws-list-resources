@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+ for accounts in $(grep '\[profile' ~/.aws/config | cut -d' ' -f2 | tr -d ']')
+ do
+   #aws ec2 describe-instances --query 'Reservations[].Instances[].Tags[?Key==`Name`].Value[]' --profile "$accounts" --output table
+   #aws rds describe-db-instances --query  'DBInstances[*].[DBInstanceIdentifier]' --profile "$accounts" --output table
+   aws cloudfront list-distributions --profile "$accounts" --query 'DistributionList.Items[*].DomainName' --output table
+   #aws route53 list-hosted-zones-by-name --profile "$accounts" --query 'HostedZones[*].Name' --output table
+ done

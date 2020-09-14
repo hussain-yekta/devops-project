@@ -5,10 +5,14 @@ metadata:
   namespace: kube-system
 data:
   mapRoles: |
-    - rolearn: arn:aws:iam::401413892014:role/eks-dev-workers-NodeInstanceRole-1HJTO58WTB9V5
+    - rolearn: <node-instance-role>
       username: system:node:{{EC2PrivateDNSName}}
       groups:
         - system:bootstrappers
         - system:nodes
         # next line allows deployments (jenkins)
+        - system:masters
+    - rolearn: arn:aws:iam::401413892014:role/DevopsAccessRole2020B
+      username: devops2020B
+      groups:
         - system:masters

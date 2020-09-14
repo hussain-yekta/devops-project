@@ -1,0 +1,46 @@
+= aws-ecr-set-lifecycle-policies(1)
+ilearndevops@gmail.com
+v1.0.0
+:doctype: manpage
+:manmanual: aws-ecr-set-lifecycle-policies
+:mansource: aws-ecr-set-lifecycle-policies
+:man-linkstyle: pass:[blue R < >]
+
+== Name
+
+aws-ecr-set-lifecycle-policies - set lifecycle policies on all ECR repositories to cleanup images
+
+== Synopsis
+
+*aws-ecr-set-lifecycle-policies* [--help]
+
+== Description
+
+This script sets lifecycle policies to all ECR repositories.
+Based on lifecycle policy, certain images will be removed from all ECR repositories in an account
+
+== Options
+
+*--help, -h*::
+  Print this man page.
+
+
+== Exit status
+
+*0*::
+  Success.
+  Lifecycle policies are created in AWS ECR.
+
+*>0*::
+  Failure.
+  Failed to create lifecycle policy.
+
+== See also
+
+* <<aws-ecr-create-repository#,aws-ecr-create-repository>>
+* <<aws-ecr-set-access-policy#,aws-ecr-set-access-policy>>
+* <<aws-ecr-set-lifecycle-policy#,aws-ecr-set-lifecycle-policy>>
+
+== Copyright
+
+Copyright (C) 2020 312-school +

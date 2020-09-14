@@ -1,0 +1,65 @@
+#!/bin/bash
+#
+# Push an image to ECR registry
+#
+set -e
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source "${DIR}/bash-lib"
+
+# Transform long options to short ones
+for arg in "$@"; do
+  shift
+  case "$arg" in
+    "--help")             set -- "$@" "-h" ;;
+    "--repository-name")  set -- "$@" "-r" ;;
+    "--tag-name")         set -- "$@" "-t" ;;
+    *)                    set -- "$@" "$arg"
+  esac
+done
+
+# Parse options
+while getopts ":hr:t:" opt; do
+  case ${opt} in
+    h ) usage ;;
+    r ) repository="${OPTARG}";;
+    t ) version="${OPTARG}";;
+    ? ) usage ;;
+  esac
+done
+shift $((OPTIND -1))
+
+# Log into the specified registries
+eval $(aws-ecr-login)
+
+# Tag and push the image
+account=$(aws sts get-caller-identity --output text --query 'Account')
+registry="${account}.dkr.ecr.us-east-1.amazonaws.com"
+image="${repository}:${version}"
+remote="${registry}/${image}"
+
+# Use ${repository} here to pick up the "latest" tag
+# Note this requires building without specifying a tag
+docker tag "${repository}" "${registry}/${image}"
+
+# build an deploy
+case $version in
+  stable)
+    # in this case we push the image even if it exists alrady
+    set -x
+    docker push "${remote}"
+    set +x
+    ;;
+  *)
+    # here push the image only if it does not exist since we use immutability
+    if aws ecr describe-images --repository-name ${repository} --image-ids imageTag=${version}
+    then
+      echo "image ${remote} already exist, skipping docker push"
+    else
+      set -x
+      docker push "${remote}"
+      set +x
+    fi
+    ;;
+esac
+
+exit 0

@@ -1,0 +1,33 @@
+#!/bin/bash
+
+set -e
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source "${DIR}/bash-lib"
+
+# Transform long options to short ones
+for arg in "$@"; do
+  shift
+  case "$arg" in
+    "--help")   set -- "$@" "-h" ;;
+    *)          set -- "$@" "$arg"
+  esac
+done
+
+# Parse options
+while getopts ":hs" opt; do
+  case ${opt} in
+    h ) manpage ;;
+    ? ) usage ;;
+  esac
+done
+shift $((OPTIND -1))
+
+if [[ -z $KUBERNETES_SERVICE_HOST ]]; then
+   AWS_DEFAULT_REGION="us-east-1"
+else
+   AWS_DEFAULT_REGION=$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document -m 10 | awk -F\" '/region/ {print $4}')
+fi
+
+echo "$AWS_DEFAULT_REGION"
+
+exit 0

@@ -1,0 +1,161 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: grafana
+  name: grafana
+  namespace: NAMESPACE
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+      - env:
+        - name: GF_SECURITY_ADMIN_USER
+          valueFrom:
+              secretKeyRef:
+                name: SERVICE_NAME-secret
+                key: admin-user
+        - name: GF_SECURITY_ADMIN_PASSWORD
+          valueFrom:
+              secretKeyRef:
+                name: SERVICE_NAME-secret
+                key: admin-password
+        - name: GF_SECURITY_LOKI_USER
+          valueFrom:
+              secretKeyRef:
+                name: SERVICE_NAME-editor
+                key: loki-user
+        - name: GF_SECURITY_LOKI_PASSWORD
+          valueFrom:
+              secretKeyRef:
+                name: SERVICE_NAME-editor
+                key: loki-password
+        - name: GF_INSTALL_PLUGINS
+          value: grafana-worldmap-panel
+        image: grafana/grafana:6.3.0-beta1
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 10
+          httpGet:
+            path: /api/health
+            port: 3000
+            scheme: HTTP
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 30
+        name: grafana
+        ports:
+        - containerPort: 80
+          name: service
+          protocol: TCP
+        - containerPort: 3000
+          name: grafana
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /api/health
+            port: 3000
+            scheme: HTTP
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        lifecycle:
+          postStart:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - until curl http://localhost:3000 > /dev/null 2>&1; do sleep 5; done ;
+                curl -s -XPOST -u "${GF_SECURITY_ADMIN_USER}:${GF_SECURITY_ADMIN_PASSWORD}"
+                -d "name=${GF_SECURITY_LOKI_USER}"
+                -d "login=${GF_SECURITY_LOKI_USER}"
+                -d "password=${GF_SECURITY_LOKI_PASSWORD}"
+                http://localhost:3000/api/admin/users | sed 's/[^0-9]*//g' | tee /tmp/${GF_SECURITY_LOKI_USER}-userid ;
+                curl -X PATCH -u "${GF_SECURITY_ADMIN_USER}:${GF_SECURITY_ADMIN_PASSWORD}" -d "role=Editor" http://localhost:3000/api/org/users/$(cat /tmp/${GF_SECURITY_LOKI_USER}-userid);
+                rm /tmp/${GF_SECURITY_LOKI_USER}-userid
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/grafana/grafana.ini
+          name: config
+          subPath: grafana.ini
+        - mountPath: /etc/grafana/ldap.toml
+          name: config
+          subPath: ldap.toml
+        - mountPath: /var/lib/grafana
+          name: storage
+        - mountPath: /etc/grafana/provisioning/dashboards/general
+          name: grafana-general-dashboards
+        - mountPath: /etc/grafana/provisioning/dashboards/dashboard.yml
+          name: grafana-dashboards
+          subPath: dashboard.yml
+        - mountPath: /etc/grafana/provisioning/datasources
+          name: grafana-datasources
+      restartPolicy: Always
+      securityContext:
+        fsGroup: 472
+        runAsUser: 472
+      serviceAccount: grafana
+      serviceAccountName: grafana
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: grafana
+        name: config
+      - configMap:
+          name: grafana-general-dashboards
+        name: grafana-general-dashboards
+      - configMap:
+          name: grafana-dashboards
+        name: grafana-dashboards
+      - configMap:
+          name: grafana-datasources
+        name: grafana-datasources
+      - emptyDir: {}
+        name: storage
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: grafana
+  name: grafana
+  namespace: NAMESPACE
+spec:
+  ports:
+  - name: service
+    port: 80
+    protocol: TCP
+    targetPort: 3000
+  selector:
+    app: grafana
+
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: SERVICE_NAME-ingress
+  namespace: NAMESPACE
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  rules:
+  - host: HOSTNAME
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: SERVICE_NAME
+          servicePort: 80

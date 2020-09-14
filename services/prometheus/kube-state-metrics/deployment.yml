@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: prometheus
+    component: kube-state-metrics
+  name: prometheus-kube-state-metrics
+  namespace: NAMESPACE
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+      component: kube-state-metrics
+  template:
+    metadata:
+      labels:
+        app: prometheus
+        component: kube-state-metrics
+    spec:
+      containers:
+      - args:
+        - --metric-whitelist=kube_pod_created,kube_pod_status_phase,kube_pod_container_status_restarts_total
+        image: quay.io/coreos/kube-state-metrics:v1.5.0
+        imagePullPolicy: IfNotPresent
+        name: prometheus-kube-state-metrics
+        ports:
+        - containerPort: 8080
+          name: metrics
+          protocol: TCP
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      serviceAccount: prometheus-kube-state-metrics
+      serviceAccountName: prometheus-kube-state-metrics
+      terminationGracePeriodSeconds: 30

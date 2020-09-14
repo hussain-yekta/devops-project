@@ -1,0 +1,67 @@
+= change-cluster(1)
+ilearndevops@gmail.com
+v1.0.0
+:doctype: manpage
+:manmanual: change-cluster
+:mansource: change-cluster
+:man-linkstyle: pass:[blue R < >]
+
+== Name
+
+change-cluster - point kube to a cluster
+
+== Synopsis
+
+*change-cluster* [--help] [--application-name <cluster_name>] [--experimental]
+
+== Description
+
+This script sets the kubernetes context. By default it switches to stable cluster.
+Use --experimental option in order to switch to experimental cluster instead. If
+there is no experimental cluster for a given application, the stable cluster is
+used instead.
+
+The list of stable and experimental clusters for each application is defined
+inside this script itself.
+
+== Options
+
+*--help, -h*::
+  Print this man page.
+
+*--application-name, -a*::
+  An application name or EKS cluster name.
+  An application name is a cluster name prefix when multiple when multiple clusters
+  exist, e.g. _eks-dev_ when clusters _eks-dev-1_ and _eks-dev-2_ exists.
+  A cluster name is a regular EKS cluster name.
+  If the name provided is acn applucation name, the actual name of the target
+  cluster will be calculated based on the current tag. By default the *stable*
+  cluster is selected.
+  If a regular cluster name is provided, it is used as the target.
+
+*--experimental, -e*::
+  Switch to the experimental cluster rather then the stable one.
+
+== Exit status
+
+*0*::
+  Success.
+  The kubernetes context was updated.
+
+*>0*::
+  Failure.
+  Failed to update kubernetes context.
+
+== Example
+
+$ change-cluster --application-name eks-dev
+or
+$ change-cluster --application-name eks-dev-1
+
+== See also
+
+* <<aws-eks-set-stable-tag#,aws-eks-set-stable-tag>>
+
+== Copyright
+
+Copyright (C) 2020 312-school +

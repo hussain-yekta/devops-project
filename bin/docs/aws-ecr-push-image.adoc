@@ -1,0 +1,52 @@
+= aws-ecr-push-image(1)
+ilearndevops@gmail.com
+v1.0.0
+:doctype: manpage
+:manmanual: aws-ecr-push-image
+:mansource: aws-ecr-push-image
+:man-linkstyle: pass:[blue R < >]
+
+== Name
+
+aws-ecr-push-image - push a docker image to an AWS ECR
+
+== Synopsis
+
+*aws-ecr-push-image* [--help] [--repository-name _repository_] [--tag-name _tag_]
+
+== Description
+
+This script pushes a docker image to a AWS ECR container registry.
+The registry to use is determined by aws-ecr-login. The _repository_ for the image
+must have been created previously - see *aws-ecr-create-repo*.
+The image is tagged with the specified _tag_ name before pushing.
+
+== Options
+
+*--help, -h*::
+  Print this man page.
+
+*--repository-name, -r*::
+  The name of the _repository_ to create.
+
+*--tag-name, -t*::
+  The name of the _tag_ to use .
+
+== Exit status
+
+*0*::
+  Success.
+  The image was pushed to the ECR.
+
+*>0*::
+  Failure.
+  The image push or any prerequisite operation failed.
+
+== See also
+
+* <<aws-ecr-create-repository#,aws-ecr-create-repository>>
+* <<aws-ecr-login#,aws-ecr-login>>
+
+== Copyright
+
+Copyright (C) 2020 312-school +
